@@ -24,7 +24,6 @@ REASONS = {
     "fraud": "💀 Мошенничество и обман"
 }
 
-# Список для ротации (порядок важен)
 ROTATION_REASONS = ["spam", "fraud", "misinformation", "illegal", "harassment", "violence", "self_harm"]
 
 # === МЕНЮ ===
@@ -292,14 +291,12 @@ def run_attack(chat_id):
     failed = 0
     proxy_index = 0
     report = []
-    last_tracking_time = 0
     rotation = order.get("rotation", False)
     rotation_index = order.get("rotation_index", 0)
 
     bot.send_message(chat_id, f"🔥 Атака на видео {video_id} началась!")
 
     while order["active"] and time.time() - start_time < duration:
-        # Выбор причины
         if rotation:
             reason_key = ROTATION_REASONS[rotation_index % len(ROTATION_REASONS)]
             rotation_index += 1
@@ -328,16 +325,11 @@ def run_attack(chat_id):
             failed += 1
             report.append(f"#{sent} | ❌ СБОЙ | {REASONS.get(reason_key, reason_key)} | {str(e)[:20]}")
         proxy_index += 1
+
+        # === ОТЧЁТ ПОСЛЕ КАЖДОЙ ЖАЛОБЫ ===
+        bot.send_message(chat_id, f"📊 Жалоба #{sent} | Успешно: {success}, Ошибок: {failed} | Причина: {REASONS.get(reason_key, reason_key)}")
+
         time.sleep(interval)
-
-        if sent % 5 == 0:
-            bot.send_message(chat_id, f"📊 Промежуточный итог: Успешно {success}, Ошибок {failed} из {sent}")
-
-        if order.get("tracking", False):
-            current_time = time.time()
-            if current_time - last_tracking_time >= order.get("tracking_interval", 300):
-                bot.send_message(chat_id, f"📡 [Отслеживание] Успешно: {success}, Ошибок: {failed}, Всего: {sent}")
-                last_tracking_time = current_time
 
     if order["active"]:
         final_msg = (
